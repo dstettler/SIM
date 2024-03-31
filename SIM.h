@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <queue>
 #include <fstream>
 
 using std::string, std::vector, std::map, std::shared_ptr;
@@ -25,8 +24,17 @@ class SIM
     };
 
     private:
+    struct BinaryLine
+    {
+        string lineContent;
+        int lineFreq;
+        unsigned int srcPos;
+
+        bool operator<(const BinaryLine &other) const;
+    };
+
     vector<string> srcLines;
-    map<string, int> lineFreqs;
+    vector<string> mostFrequent;
 
     SIMMode mode;
     
@@ -36,6 +44,13 @@ class SIM
     string filepathDirs;
 
     void initSrcLines();
+    vector<string> getMostFrequentEntries(map<string, std::pair<int, int>>* frequencyDict, int max = 0);
+    string getBinStrFromInt(int i, int numChars);
+    // Returns index of val in *vec, -1 if not found
+    int valueInVec(string val, vector<string>* vec);
+
+    void mainLoop();
+    void printFreqDict();
 
     public:
     ~SIM();
