@@ -1,0 +1,7 @@
+.vscode/
+debug/
+release/
+obj/
+text/
+SIM
+SIM.exe
