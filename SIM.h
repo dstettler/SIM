@@ -30,11 +30,11 @@ class SIM
         int lineFreq;
         unsigned int srcPos;
 
-        bool operator<(const BinaryLine &other) const;
+        static bool comp(const BinaryLine &a, const BinaryLine &other);
     };
 
     vector<string> srcLines;
-    vector<string> mostFrequent;
+    vector<BinaryLine> mostFrequent;
 
     SIMMode mode;
     
@@ -44,10 +44,10 @@ class SIM
     string filepathDirs;
 
     void initSrcLines();
-    vector<string> getMostFrequentEntries(map<string, std::pair<int, int>>* frequencyDict, int max = 0);
+    vector<BinaryLine> getMostFrequentEntries(map<string, std::pair<int, int>>* frequencyDict, int max = 0);
     string getBinStrFromInt(int i, int numChars);
     // Returns index of val in *vec, -1 if not found
-    int valueInVec(string val, vector<string>* vec);
+    int valueInVec(string val, vector<BinaryLine>* vec);
 
     void mainLoop();
     void printFreqDict();

@@ -8,12 +8,12 @@
 
 using std::string, std::vector, std::map, std::shared_ptr;
 
-bool SIM::BinaryLine::operator< (const BinaryLine &other) const
+bool SIM::BinaryLine::comp(const BinaryLine &a, const BinaryLine &other)
 {
-    if (this->lineFreq != other.lineFreq)
-        return this->lineFreq < other.lineFreq;
+    if (a.lineFreq != other.lineFreq)
+        return a.lineFreq > other.lineFreq;
     else
-        return this->srcPos < other.srcPos;
+        return a.srcPos < other.srcPos;
 }
 
 void SIM::init(string filepathDirs, SIM::SIMMode mode)
@@ -73,10 +73,9 @@ void SIM::initSrcLines()
     }
 }
 
-vector<string> SIM::getMostFrequentEntries(map<string, std::pair<int, int>>* frequencyDict, int max)
+vector<SIM::BinaryLine> SIM::getMostFrequentEntries(map<string, std::pair<int, int>>* frequencyDict, int max)
 {
-    vector<string> _outVec;
-    std::priority_queue<BinaryLine> _priorityQueue;
+    vector<BinaryLine> _outVec;
 
     for (auto iter = frequencyDict->begin(); iter != frequencyDict->end(); ++iter)
     {
@@ -84,18 +83,15 @@ vector<string> SIM::getMostFrequentEntries(map<string, std::pair<int, int>>* fre
         _line.lineContent = iter->first;
         _line.lineFreq = iter->second.first;
         _line.srcPos = iter->second.second;
-        _priorityQueue.emplace(_line);
+        _outVec.push_back(_line);
     }
 
-    int i = 0;
-    while ((!_priorityQueue.empty() && i < max) || (!_priorityQueue.empty() && max == 0))
-    {
-        _outVec.push_back(_priorityQueue.top().lineContent);
-        _priorityQueue.pop();
-        i++;
-    }
+    std::sort(_outVec.begin(), _outVec.end(), &SIM::BinaryLine::comp);
 
-    return _outVec;
+    auto _iterA = _outVec.begin();
+    auto _iterB = _outVec.begin() + max;
+
+    return vector<BinaryLine>(_iterA, _iterB);
 }
 
 string SIM::getBinStrFromInt(int i, int numChars)
@@ -112,14 +108,16 @@ string SIM::getBinStrFromInt(int i, int numChars)
         for (int i = 0; i < numChars - builder.size(); i++)
             builder = "0" + builder;
 
-    printf("Got %s from %d\n", builder.c_str(), i);
+    if (DEBUG_MODE)
+        printf("Got %s from %d\n", builder.c_str(), i);
+        
     return builder;
 }
 
-int SIM::valueInVec(string val, vector<string>* vec)
+int SIM::valueInVec(string val, vector<BinaryLine>* vec)
 {
     for (int i = 0; i < vec->size(); i++)
-        if (val == vec->at(i))
+        if (val == vec->at(i).lineContent)
             return i;
 
     return -1;
@@ -168,9 +166,9 @@ void SIM::printFreqDict()
     for (auto iter = mostFrequent.begin(); iter != mostFrequent.end(); ++iter)
     {
         if (DEBUG_MODE)
-            std::cout << *iter << std::endl;
+            std::cout << iter->lineContent << std::endl;
 
-        outfile << *iter << "\n";
+        outfile << iter->lineContent << "\n";
     }
 }
 
