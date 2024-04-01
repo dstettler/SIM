@@ -53,6 +53,10 @@ void SIM::initSrcLines()
         int i = 0;
         while (std::getline(f, line))
         {
+            // Remove Windows line ending if it is present
+            if (line.back() == '\r')
+                line.pop_back();
+
             srcLines.push_back(line);
             auto _foundIter = _lineFreqsMap.find(line); 
             if (_foundIter != _lineFreqsMap.end())
