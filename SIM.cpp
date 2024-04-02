@@ -336,8 +336,8 @@ void SIM::mainCompLoop()
             int _tempReps = _reps;
             _reps = -1;
 
-            if (*iter == _previous && _tempReps >= 7)
-                continue;
+            if (DEBUG_MODE)
+                std::cout << "Current: " << *iter << ", prev: " << _previous << std::endl;
         }
 
         // Dict index
