@@ -51,7 +51,8 @@ class SIM
     int valueInVec(string val, vector<BinaryLine>* vec);
 
     // Returns index of first character mismatch in str, -1 if not found
-    int getFirstMismatch(std::string str1, std::string str2);
+    // `offset` can be used to skip ahead
+    int getFirstMismatch(std::string str1, std::string str2, int offset = 0);
     /* 
         Returns if there is another mismatch between the two given strings.
         `firstMismatch` - First known mismatch position

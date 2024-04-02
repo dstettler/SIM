@@ -131,9 +131,9 @@ int SIM::valueInVec(string val, vector<BinaryLine>* vec)
     return -1;
 }
 
-int SIM::getFirstMismatch(string str1, string str2)
+int SIM::getFirstMismatch(string str1, string str2, int offset)
 {
-    for (int i = 0; i < str1.size() && i < str2.size(); i++)
+    for (int i = 0 + offset; i < str1.size() && i < str2.size(); i++)
         if (str1.at(i) != str2.at(i))
             return i;
 
@@ -272,6 +272,29 @@ string SIM::mismatch4Bit(string line)
 
 string SIM::mismatch2BitAnywhere(string line)
 {
+    for (auto dictEntry = mostFrequent.begin(); dictEntry != mostFrequent.end(); ++dictEntry)
+    {
+        int _firstMismatch = getFirstMismatch(line, dictEntry->lineContent);
+        if (_firstMismatch == -1)
+            continue;
+
+        int _secondMismatch = getFirstMismatch(line, dictEntry->lineContent, _firstMismatch + 1);
+        if (_secondMismatch == -1 || isAnotherMistmatch(line, dictEntry->lineContent, _secondMismatch, 1))
+            continue;
+
+        string _generatedString = getBinStrFromInt(_firstMismatch, 5);
+        if (DEBUG_MODE)
+            _generatedString += " ";
+
+        _generatedString += getBinStrFromInt(_secondMismatch, 5);
+
+        if (DEBUG_MODE)
+            _generatedString += " ";
+        _generatedString += getBinStrFromInt(std::distance(mostFrequent.begin(), dictEntry), 4);
+
+        return _generatedString;
+    }
+
     return "INVALID";
 }
 
@@ -284,6 +307,11 @@ void SIM::mainCompLoop()
     int _reps = -1;
     for (auto iter = srcLines.begin(); iter != srcLines.end(); ++iter)
     {
+        if (DEBUG_MODE)
+        {
+            std::cout << "-----\nLine: " << std::distance(srcLines.begin(), iter) << std::endl;
+        }
+
         std::string _previous = string();
         if (iter != srcLines.begin())
         {
@@ -295,11 +323,15 @@ void SIM::mainCompLoop()
         // RLE logic
         if (*iter == _previous && _reps < 7)
         {
+            if (DEBUG_MODE)
+                std::cout << *iter << ", continuing..." << std::endl;
             _reps++;
             continue;
         }
         else if (*iter == _previous && _reps >= 7 || (*iter != _previous && _reps > 0))
         {
+            if (DEBUG_MODE)
+                std::cout << "Terminating RLE with " << _reps << " reps" << std::endl;
             outfile << "001" << _debugSpace << getBinStrFromInt(_reps, 3) << "\n";
             int _tempReps = _reps;
             _reps = -1;
@@ -312,6 +344,9 @@ void SIM::mainCompLoop()
         int _dictIndex = valueInVec(*iter, &mostFrequent);
         if (_dictIndex != -1)
         {
+            if (DEBUG_MODE)
+                std::cout << "Dict" << std::endl;
+
             outfile << "111" << _debugSpace << getBinStrFromInt(_dictIndex, 4) << "\n";
             continue;
         }
@@ -332,11 +367,11 @@ void SIM::mainCompLoop()
         {
             if (DEBUG_MODE)
             {
-                std::cout << maskIter->first << maskIter->second << std::endl;
+                std::cout << maskIter->first << " " << maskIter->second << std::endl;
                 std::cout << maskIter->second.size() << " < " << _shortest->second.size() << std::endl;
             }
 
-            if (maskIter->second.size() < _shortest->second.size() && maskIter->second != "INVALID")
+            if ((maskIter->second.size() < _shortest->second.size() && maskIter->second != "INVALID") || _shortest->second == "INVALID")
                 _shortest = maskIter;
         }
 
@@ -345,6 +380,9 @@ void SIM::mainCompLoop()
             outfile << _shortest->first << _debugSpace << _shortest->second << "\n";
             continue;
         }
+
+        if (DEBUG_MODE)
+            std::cout << "Writing original code..." << std::endl;
 
         outfile << "000" << _debugSpace << *iter << "\n";
     }
