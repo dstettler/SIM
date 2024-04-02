@@ -26,17 +26,20 @@ void SIM::init(string filepathDirs, SIM::SIMMode mode)
     switch (mode)
     {
         case SIMMode::Compression:
-            outfile.open(filepathDirs + COMPRESSED_FILEPATH);
+            outfilePath = filepathDirs + COMPRESSED_FILEPATH; 
             break;
         case SIMMode::Decompression:
-            outfile.open(filepathDirs + INSTRUCTIONS_FILEPATH);
+            outfilePath = filepathDirs + INSTRUCTIONS_FILEPATH;
             break;
     }
+
+    outfile.open(outfilePath);
 }
 
 SIM::~SIM()
 {
-    outfile.close();
+    if (outfile.is_open())
+        outfile.close();
 }
 
 void SIM::initSrcLines()
@@ -108,8 +111,9 @@ string SIM::getBinStrFromInt(int i, int numChars)
         _i /= 2;
     }
 
-    if (builder.size() < numChars)
-        for (int i = 0; i < numChars - builder.size(); i++)
+    int _charsDiff = numChars - builder.size();
+    if (_charsDiff > 0)
+        for (int i = 0; i < _charsDiff; i++)
             builder = "0" + builder;
 
     if (DEBUG_MODE)
@@ -127,10 +131,158 @@ int SIM::valueInVec(string val, vector<BinaryLine>* vec)
     return -1;
 }
 
-void SIM::mainLoop()
+int SIM::getFirstMismatch(string str1, string str2)
 {
-    int _reps = 0;
-    for (auto iter = srcLines.begin(); iter  != srcLines.end(); ++iter)
+    for (int i = 0; i < str1.size() && i < str2.size(); i++)
+        if (str1.at(i) != str2.at(i))
+            return i;
+
+    return -1;
+}
+
+bool SIM::isAnotherMistmatch(std::string str1, std::string str2, int firstMismatch, int skip)
+{
+    for (int i = firstMismatch + skip; i < str1.size() && i < str2.size(); i++)
+        if (str1.at(i) != str2.at(i))
+            return true;
+
+    return false;
+}
+
+bool SIM::consecutiveMismatches(std::string str1, std::string str2, int firstMismatch, int length)
+{
+    for (int i = firstMismatch; (i < str1.size() && i < str2.size()) || (i < firstMismatch + length); i++)
+        if (str1.at(i) != str2.at(i))
+            return false;
+
+    return true;
+}
+
+string SIM::bitmaskCompress(string line)
+{
+    for (auto dictEntry = mostFrequent.begin(); dictEntry != mostFrequent.end(); ++dictEntry)
+    {
+        int _firstMismatch = getFirstMismatch(line, dictEntry->lineContent);
+        
+        if (DEBUG_MODE)
+            std::cout << _firstMismatch << " : " << std::distance(mostFrequent.begin(), dictEntry) << std::endl;
+
+        if (_firstMismatch == -1 || isAnotherMistmatch(line, dictEntry->lineContent, _firstMismatch, 4))
+            continue;
+
+        string _generatedString = getBinStrFromInt(_firstMismatch, 5);
+        if (DEBUG_MODE)
+            _generatedString += " ";
+        for (int i = 0; i < 4; i++)
+        {
+            if (i + _firstMismatch > line.size())
+            {
+                for (int j = 0; j < 4 - i; j++)
+                    _generatedString += '0';
+                break;
+            }
+
+            if (line.at(i + _firstMismatch) != dictEntry->lineContent.at(i + _firstMismatch))
+                _generatedString += '1';
+            else
+                _generatedString += '0';
+        }
+
+        if (DEBUG_MODE)
+            _generatedString += " ";
+        _generatedString += getBinStrFromInt(std::distance(mostFrequent.begin(), dictEntry), 4);
+
+        return _generatedString;
+    }
+
+    return "INVALID";
+}
+
+string SIM::mismatch1Bit(string line)
+{
+    for (auto dictEntry = mostFrequent.begin(); dictEntry != mostFrequent.end(); ++dictEntry)
+    {
+        int _firstMismatch = getFirstMismatch(line, dictEntry->lineContent);
+        if (_firstMismatch == -1 || isAnotherMistmatch(line, dictEntry->lineContent, _firstMismatch, 1))
+            continue;
+
+        string _generatedString = getBinStrFromInt(_firstMismatch, 5);
+        if (DEBUG_MODE)
+            _generatedString += " ";
+
+        if (DEBUG_MODE)
+            _generatedString += " ";
+        _generatedString += getBinStrFromInt(std::distance(mostFrequent.begin(), dictEntry), 4);
+
+        return _generatedString;
+    }
+
+    return "INVALID";
+}
+
+string SIM::mismatch2Bit(string line)
+{
+    for (auto dictEntry = mostFrequent.begin(); dictEntry != mostFrequent.end(); ++dictEntry)
+    {
+        int _firstMismatch = getFirstMismatch(line, dictEntry->lineContent);
+        if (
+            _firstMismatch == -1 || 
+            isAnotherMistmatch(line, dictEntry->lineContent, _firstMismatch, 2) || 
+            !consecutiveMismatches(line, dictEntry->lineContent, _firstMismatch, 2))
+            continue;
+
+        string _generatedString = getBinStrFromInt(_firstMismatch, 5);
+        if (DEBUG_MODE)
+            _generatedString += " ";
+
+        if (DEBUG_MODE)
+            _generatedString += " ";
+        _generatedString += getBinStrFromInt(std::distance(mostFrequent.begin(), dictEntry), 4);
+
+        return _generatedString;
+    }
+
+    return "INVALID";
+}
+
+string SIM::mismatch4Bit(string line)
+{
+    for (auto dictEntry = mostFrequent.begin(); dictEntry != mostFrequent.end(); ++dictEntry)
+    {
+        int _firstMismatch = getFirstMismatch(line, dictEntry->lineContent);
+        if (
+            _firstMismatch == -1 || 
+            isAnotherMistmatch(line, dictEntry->lineContent, _firstMismatch, 4) || 
+            !consecutiveMismatches(line, dictEntry->lineContent, _firstMismatch, 4))
+            continue;
+
+        string _generatedString = getBinStrFromInt(_firstMismatch, 5);
+        if (DEBUG_MODE)
+            _generatedString += " ";
+
+        if (DEBUG_MODE)
+            _generatedString += " ";
+        _generatedString += getBinStrFromInt(std::distance(mostFrequent.begin(), dictEntry), 4);
+
+        return _generatedString;
+    }
+
+    return "INVALID";
+}
+
+string SIM::mismatch2BitAnywhere(string line)
+{
+    return "INVALID";
+}
+
+void SIM::mainCompLoop()
+{
+    string _debugSpace = string();
+    if (DEBUG_MODE)
+        _debugSpace = " ";
+
+    int _reps = -1;
+    for (auto iter = srcLines.begin(); iter != srcLines.end(); ++iter)
     {
         std::string _previous = string();
         if (iter != srcLines.begin())
@@ -148,36 +300,78 @@ void SIM::mainLoop()
         }
         else if (*iter == _previous && _reps >= 7 || (*iter != _previous && _reps > 0))
         {
-            outfile << "001 " << getBinStrFromInt(_reps, 3) << "\n";
+            outfile << "001" << _debugSpace << getBinStrFromInt(_reps, 3) << "\n";
+            int _tempReps = _reps;
+            _reps = -1;
+
+            if (*iter == _previous && _tempReps >= 7)
+                continue;
         }
-        _reps = 0;
 
         // Dict index
         int _dictIndex = valueInVec(*iter, &mostFrequent);
         if (_dictIndex != -1)
         {
-            outfile << "111 " << getBinStrFromInt(_dictIndex, 4) << "\n";
+            outfile << "111" << _debugSpace << getBinStrFromInt(_dictIndex, 4) << "\n";
             continue;
         }
 
-        outfile << "000 "  << *iter << "\n";
+        // Begin checking differing bitmask/mismatch methods
+        map<string, string> _masks;
+        _masks.emplace("010", bitmaskCompress(*iter));
+        _masks.emplace("011", mismatch1Bit(*iter));
+        _masks.emplace("100", mismatch2Bit(*iter));
+        _masks.emplace("101", mismatch4Bit(*iter));
+        _masks.emplace("110", mismatch2BitAnywhere(*iter));
+        
+        if (DEBUG_MODE)
+            std::cout << "Iterating masks..." << std::endl;
+
+        auto _shortest = _masks.begin();
+        for (auto maskIter = _masks.begin(); maskIter != _masks.end(); ++maskIter)
+        {
+            if (DEBUG_MODE)
+            {
+                std::cout << maskIter->first << maskIter->second << std::endl;
+                std::cout << maskIter->second.size() << " < " << _shortest->second.size() << std::endl;
+            }
+
+            if (maskIter->second.size() < _shortest->second.size() && maskIter->second != "INVALID")
+                _shortest = maskIter;
+        }
+
+        if (_shortest->second != "INVALID")
+        {
+            outfile << _shortest->first << _debugSpace << _shortest->second << "\n";
+            continue;
+        }
+
+        outfile << "000" << _debugSpace << *iter << "\n";
     }
 }
 
 void SIM::printFreqDict()
 {
     outfile << "xxxx" << "\n";
+
     for (auto iter = mostFrequent.begin(); iter != mostFrequent.end(); ++iter)
     {
-        if (DEBUG_MODE)
-            std::cout << iter->lineContent << std::endl;
-
         outfile << iter->lineContent << "\n";
     }
 }
 
+void SIM::formatFile()
+{
+    outfile.close();
+    std::ifstream infile(outfilePath);
+}
+
 void SIM::run()
 {
-    mainLoop();
-    printFreqDict();
+    if (mode == SIMMode::Compression)
+    {
+        mainCompLoop();
+        // formatFile();
+        printFreqDict();
+    }
 }
