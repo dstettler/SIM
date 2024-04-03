@@ -89,6 +89,9 @@ void Decompress::decompLoop()
         string _outStr = string();
         if (_format == "000")
         {
+            if (pc + 32 > codeStream.size())
+                break;
+
             nextPc = pc + 3 + 32;
             for (int i = 0; i < 32; i++)
                 _outStr += codeStream.at(pc + 3 + i);
