@@ -5,10 +5,16 @@
 
 using std::string;
 
-const string INSTRUCTIONS_FILEPATH = "instr.txt";
+// comp in
+const string INSTRUCTIONS_FILEPATH = "original.txt";
+// decomp in
 const string COMPRESSED_FILEPATH = "compressed.txt";
+// comp out
+const string COMPRESSED_OUT = "cout.txt";
+// decomp out
+const string DECOMPRESSED_OUT = "dout.txt";
 
-const bool DEBUG_MODE = true;
+const bool DEBUG_MODE = false;
 
 string getBinStrFromInt(int i, int numChars);
 

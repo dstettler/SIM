@@ -23,7 +23,7 @@ Compress::Compress(string filepathDirs)
 
     initSrcLines();
 
-    outfilePath = filepathDirs + COMPRESSED_FILEPATH;
+    outfilePath = filepathDirs + COMPRESSED_OUT;
     outfile.open(outfilePath);
 }
 

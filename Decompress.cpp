@@ -16,7 +16,7 @@ Decompress::Decompress(string filepathDirs)
 
     initCodeStream();
 
-    this->outfilePath = filepathDirs + INSTRUCTIONS_FILEPATH;
+    this->outfilePath = filepathDirs + DECOMPRESSED_OUT;
     this->outfile.open(this->outfilePath);
 }
 
