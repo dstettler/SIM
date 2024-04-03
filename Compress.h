@@ -1,5 +1,5 @@
-#ifndef SIM_H
-#define SIM_H
+#ifndef COMPRESS_H
+#define COMPRESS_H
 
 #include <map>
 #include <string>
@@ -9,21 +9,8 @@
 
 using std::string, std::vector, std::map, std::shared_ptr;
 
-const string INSTRUCTIONS_FILEPATH = "original.txt";
-const string COMPRESSED_FILEPATH = "compressed.txt";
-
-const bool DEBUG_MODE = true;
-
-class SIM
+class Compress
 {
-    public:
-    enum class SIMMode 
-    {
-        Compression,
-        Decompression
-    };
-
-    private:
     struct BinaryLine
     {
         string lineContent;
@@ -36,13 +23,10 @@ class SIM
     vector<string> srcLines;
     vector<BinaryLine> mostFrequent;
 
-    SIMMode mode;
-    
-    string outfilePath;
-    std::ofstream outfile;
-
     // For testing purposes allow additional paths to files. Will be ./ in final
     string filepathDirs;
+    string outfilePath;
+    std::ofstream outfile;
 
     void initSrcLines();
     vector<BinaryLine> getMostFrequentEntries(map<string, std::pair<int, int>>* frequencyDict, int max = 0);
@@ -81,9 +65,9 @@ class SIM
     void formatFile();
 
     public:
-    ~SIM();
-    void init(string filepathDirs, SIMMode mode);
+    Compress(string filepathDirs);
+    ~Compress();
     void run();
 };
 
-#endif // SIM_H
+#endif // COMPRESS_H

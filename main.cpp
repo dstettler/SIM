@@ -1,4 +1,5 @@
-#include "SIM.h"
+#include "Compress.h"
+#include "Decompress.h"
 
 #include <iostream>
 #include <string>
@@ -16,19 +17,23 @@ int main(int argc, char* argv[])
         exit(1);
     }
 
-    SIM::SIMMode _selectedMode;
+    // Compression
     if (args[1] == "1")
-        _selectedMode = SIM::SIMMode::Compression;
+    {
+        Compress c("./text/");
+        c.run();
+    }
+    // Decompression
     else if (args[1] == "2")
-        _selectedMode = SIM::SIMMode::Decompression;
+    {
+        Decompress decomp("./text/");
+        decomp.run();
+    }
     else
     {
         std::cout << "Please use a valid argument!" << std::endl;
         exit(1);
     }
 
-    SIM s;
-    s.init("./text/", _selectedMode);
-    s.run();
     return 0;
 }

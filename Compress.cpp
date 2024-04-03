@@ -1,4 +1,5 @@
-#include "SIM.h"
+#include "Compress.h"
+#include "Constants.h"
 
 #include <algorithm>
 #include <fstream>
@@ -6,9 +7,9 @@
 #include <queue>
 #include <sstream>
 
-using std::string, std::vector, std::map, std::shared_ptr;
+using std::string, std::vector, std::map;
 
-bool SIM::BinaryLine::comp(const BinaryLine &a, const BinaryLine &other)
+bool Compress::BinaryLine::comp(const BinaryLine &a, const BinaryLine &other)
 {
     if (a.lineFreq != other.lineFreq)
         return a.lineFreq > other.lineFreq;
@@ -16,38 +17,28 @@ bool SIM::BinaryLine::comp(const BinaryLine &a, const BinaryLine &other)
         return a.srcPos < other.srcPos;
 }
 
-void SIM::init(string filepathDirs, SIM::SIMMode mode)
+Compress::Compress(string filepathDirs)
 {
     this->filepathDirs = filepathDirs;
-    this->mode = mode;
 
     initSrcLines();
 
-    switch (mode)
-    {
-        case SIMMode::Compression:
-            outfilePath = filepathDirs + COMPRESSED_FILEPATH; 
-            break;
-        case SIMMode::Decompression:
-            outfilePath = filepathDirs + INSTRUCTIONS_FILEPATH;
-            break;
-    }
-
+    outfilePath = filepathDirs + COMPRESSED_FILEPATH;
     outfile.open(outfilePath);
 }
 
-SIM::~SIM()
+Compress::~Compress()
 {
     if (outfile.is_open())
         outfile.close();
 }
 
-void SIM::initSrcLines()
+void Compress::initSrcLines()
 {
     if (DEBUG_MODE)
         std::cout << "Initializing source lines..." << std::endl;
 
-    std::ifstream f(filepathDirs + ((mode == SIMMode::Compression) ? INSTRUCTIONS_FILEPATH : COMPRESSED_FILEPATH));
+    std::ifstream f(filepathDirs + INSTRUCTIONS_FILEPATH);
     if (f.is_open())
     {
         string line;
@@ -80,7 +71,7 @@ void SIM::initSrcLines()
     }
 }
 
-vector<SIM::BinaryLine> SIM::getMostFrequentEntries(map<string, std::pair<int, int>>* frequencyDict, int max)
+vector<Compress::BinaryLine> Compress::getMostFrequentEntries(map<string, std::pair<int, int>>* frequencyDict, int max)
 {
     vector<BinaryLine> _outVec;
 
@@ -93,7 +84,7 @@ vector<SIM::BinaryLine> SIM::getMostFrequentEntries(map<string, std::pair<int, i
         _outVec.push_back(_line);
     }
 
-    std::sort(_outVec.begin(), _outVec.end(), &SIM::BinaryLine::comp);
+    std::sort(_outVec.begin(), _outVec.end(), &Compress::BinaryLine::comp);
 
     auto _iterA = _outVec.begin();
     auto _iterB = _outVec.begin() + max;
@@ -101,7 +92,7 @@ vector<SIM::BinaryLine> SIM::getMostFrequentEntries(map<string, std::pair<int, i
     return vector<BinaryLine>(_iterA, _iterB);
 }
 
-string SIM::getBinStrFromInt(int i, int numChars)
+string Compress::getBinStrFromInt(int i, int numChars)
 {
     string builder = string();
     int _i = i;
@@ -122,7 +113,7 @@ string SIM::getBinStrFromInt(int i, int numChars)
     return builder;
 }
 
-int SIM::valueInVec(string val, vector<BinaryLine>* vec)
+int Compress::valueInVec(string val, vector<BinaryLine>* vec)
 {
     for (int i = 0; i < vec->size(); i++)
         if (val == vec->at(i).lineContent)
@@ -131,7 +122,7 @@ int SIM::valueInVec(string val, vector<BinaryLine>* vec)
     return -1;
 }
 
-int SIM::getFirstMismatch(string str1, string str2, int offset)
+int Compress::getFirstMismatch(string str1, string str2, int offset)
 {
     for (int i = 0 + offset; i < str1.size() && i < str2.size(); i++)
         if (str1.at(i) != str2.at(i))
@@ -140,7 +131,7 @@ int SIM::getFirstMismatch(string str1, string str2, int offset)
     return -1;
 }
 
-bool SIM::isAnotherMistmatch(std::string str1, std::string str2, int firstMismatch, int skip)
+bool Compress::isAnotherMistmatch(std::string str1, std::string str2, int firstMismatch, int skip)
 {
     for (int i = firstMismatch + skip; i < str1.size() && i < str2.size(); i++)
         if (str1.at(i) != str2.at(i))
@@ -149,7 +140,7 @@ bool SIM::isAnotherMistmatch(std::string str1, std::string str2, int firstMismat
     return false;
 }
 
-bool SIM::consecutiveMismatches(std::string str1, std::string str2, int firstMismatch, int length)
+bool Compress::consecutiveMismatches(std::string str1, std::string str2, int firstMismatch, int length)
 {
     for (int i = firstMismatch; (i < str1.size() && i < str2.size()) || (i < firstMismatch + length); i++)
         if (str1.at(i) != str2.at(i))
@@ -158,7 +149,7 @@ bool SIM::consecutiveMismatches(std::string str1, std::string str2, int firstMis
     return true;
 }
 
-string SIM::bitmaskCompress(string line)
+string Compress::bitmaskCompress(string line)
 {
     for (auto dictEntry = mostFrequent.begin(); dictEntry != mostFrequent.end(); ++dictEntry)
     {
@@ -198,7 +189,7 @@ string SIM::bitmaskCompress(string line)
     return "INVALID";
 }
 
-string SIM::mismatch1Bit(string line)
+string Compress::mismatch1Bit(string line)
 {
     for (auto dictEntry = mostFrequent.begin(); dictEntry != mostFrequent.end(); ++dictEntry)
     {
@@ -220,7 +211,7 @@ string SIM::mismatch1Bit(string line)
     return "INVALID";
 }
 
-string SIM::mismatch2Bit(string line)
+string Compress::mismatch2Bit(string line)
 {
     for (auto dictEntry = mostFrequent.begin(); dictEntry != mostFrequent.end(); ++dictEntry)
     {
@@ -245,7 +236,7 @@ string SIM::mismatch2Bit(string line)
     return "INVALID";
 }
 
-string SIM::mismatch4Bit(string line)
+string Compress::mismatch4Bit(string line)
 {
     for (auto dictEntry = mostFrequent.begin(); dictEntry != mostFrequent.end(); ++dictEntry)
     {
@@ -270,7 +261,7 @@ string SIM::mismatch4Bit(string line)
     return "INVALID";
 }
 
-string SIM::mismatch2BitAnywhere(string line)
+string Compress::mismatch2BitAnywhere(string line)
 {
     for (auto dictEntry = mostFrequent.begin(); dictEntry != mostFrequent.end(); ++dictEntry)
     {
@@ -298,7 +289,7 @@ string SIM::mismatch2BitAnywhere(string line)
     return "INVALID";
 }
 
-void SIM::mainCompLoop()
+void Compress::mainCompLoop()
 {
     string _debugSpace = string();
     if (DEBUG_MODE)
@@ -388,7 +379,7 @@ void SIM::mainCompLoop()
     }
 }
 
-void SIM::printFreqDict()
+void Compress::printFreqDict()
 {
     outfile << "xxxx" << "\n";
 
@@ -398,18 +389,15 @@ void SIM::printFreqDict()
     }
 }
 
-void SIM::formatFile()
+void Compress::formatFile()
 {
     outfile.close();
     std::ifstream infile(outfilePath);
 }
 
-void SIM::run()
+void Compress::run()
 {
-    if (mode == SIMMode::Compression)
-    {
-        mainCompLoop();
-        // formatFile();
-        printFreqDict();
-    }
+    mainCompLoop();
+    // formatFile();
+    printFreqDict();
 }
