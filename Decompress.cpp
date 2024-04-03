@@ -65,7 +65,7 @@ void Decompress::initCodeStream()
 string Decompress::readBitsFromCodeStream(size_t start, size_t bitsToRead)
 {
     string _str = string();
-    for (int i = 0; i < bitsToRead && i + start < codeStream.size(); i++)
+    for (size_t i = 0; i < bitsToRead && i + start < codeStream.size(); i++)
         _str += codeStream[start + i];
 
     return _str;
@@ -78,8 +78,14 @@ void Decompress::decompLoop()
     // ...pc should be assigned to a value higher than this regardless
     for (size_t pc = 0; pc < codeStream.size() - 3 - 3;)
     {
+        if (DEBUG_MODE)
+            printf("Starting loop...\n");
+
         string _format = readBitsFromCodeStream(pc, 3);
         
+        if (DEBUG_MODE)
+            std::cout << "Got format: " << _format << std::endl;
+
         string _outStr = string();
         if (_format == "000")
         {
@@ -100,17 +106,17 @@ void Decompress::decompLoop()
         else if (_format == "011")
         {
             nextPc = pc + 3 + 5 + 4;
-            _outStr = oneBitMismatch(pc + 3);
+            _outStr = consecutiveBitMismatch(pc + 3, 1);
         }
         else if (_format == "100")
         {
             nextPc = pc + 3 + 5 + 4;
-            _outStr = twoBitConMismatch(pc + 3);
+            _outStr = consecutiveBitMismatch(pc + 3, 2);
         }
         else if (_format == "101")
         {
             nextPc = pc + 3 + 5 + 4;
-            _outStr = fourBitConMismatch(pc + 3);
+            _outStr = consecutiveBitMismatch(pc + 3, 4);
         }
         else if (_format == "110")
         {
@@ -122,13 +128,17 @@ void Decompress::decompLoop()
             nextPc = pc + 3 + 4;
             string _dictVal = readBitsFromCodeStream(pc + 3, 4);
             
+            if (DEBUG_MODE)
+                std::cout << "Got value: " << _dictVal << "/" << binStrToInt(_dictVal) << std::endl;
+            
             _outStr = dictionary[binStrToInt(_dictVal)];
         }
 
         if (DEBUG_MODE)
             std::cout << "PC: " << pc << ", " << _outStr  << "\n----" << std::endl;
 
-        prevLine = _outStr;
+        if (_format != "001")
+            prevLine = _outStr;
 
         outfile << _outStr << "\n";
         pc = nextPc;
@@ -137,32 +147,121 @@ void Decompress::decompLoop()
 
 string Decompress::rle(size_t startingIndex)
 {
-    return "UNDEFINED";
+    string builder = string();
+
+    string _reps = readBitsFromCodeStream(startingIndex, 3);
+    unsigned int _repsInt = binStrToInt(_reps);
+
+    if (DEBUG_MODE)
+        std::cout << "RLE reps str: " << _reps << " to int: " << _repsInt << std::endl;
+
+    for (unsigned int i = 0; i < _repsInt + 1; i++)
+    {
+        builder += prevLine + "\n";
+    }
+
+    // Remove final newline
+    builder.pop_back();
+    
+    return builder;
 }
 
 string Decompress::bitmask(size_t startingIndex)
 {
-    return "UNDEFINED";
+    string builder = string();
+
+    string _startingLocationBin, _bitmaskBin, _dictIndexBin;
+    _startingLocationBin = readBitsFromCodeStream(startingIndex, 5);
+    _bitmaskBin = readBitsFromCodeStream(startingIndex + 5, 4);
+    _dictIndexBin = readBitsFromCodeStream(startingIndex + 5 + 4, 4);
+
+    unsigned int _startingLocation = binStrToInt(_startingLocationBin);
+    unsigned int _dictIndex = binStrToInt(_dictIndexBin);
+
+    string _originalStr = dictionary[_dictIndex];
+
+    int _maskPos = -1;
+    for (size_t i = 0; i < _originalStr.size(); i++)
+    {
+        if (i == _startingLocation)
+            _maskPos = 0;
+        
+        if (_maskPos >= 0 && _maskPos < 4)
+        {
+            if (_bitmaskBin[_maskPos] == '1')
+                builder += ((_originalStr[i] == '0') ? '1' : '0' );
+            else
+                builder += _originalStr[i];
+
+            _maskPos++;
+        }
+        else
+        {
+            builder += _originalStr[i];
+        }
+    }
+
+    return builder;
 }
 
-string Decompress::oneBitMismatch(size_t startingIndex)
+string Decompress::consecutiveBitMismatch(size_t startingIndex, unsigned int bits)
 {
-    return "UNDEFINED";
-}
+    string builder = string();
 
-string Decompress::twoBitConMismatch(size_t startingIndex)
-{
-    return "UNDEFINED";
-}
+    string _startingLocationBin, _dictIndexBin;
+    _startingLocationBin = readBitsFromCodeStream(startingIndex, 5);
+    _dictIndexBin = readBitsFromCodeStream(startingIndex + 5, 4);
 
-string Decompress::fourBitConMismatch(size_t startingIndex)
-{
-    return "UNDEFINED";
+    unsigned int _startingLocation = binStrToInt(_startingLocationBin);
+    unsigned int _dictIndex = binStrToInt(_dictIndexBin);
+
+    string _originalStr = dictionary[_dictIndex];
+
+    int _maskPos = -1;
+    for (size_t i = 0; i < _originalStr.size(); i++)
+    {
+        if (i == _startingLocation)
+            _maskPos = 0;
+        
+        if (_maskPos >= 0 && _maskPos < bits)
+        {
+            builder += ((_originalStr[i] == '0') ? '1' : '0' );
+            _maskPos++;
+        }
+        else
+        {
+            builder += _originalStr[i];
+        }
+    }
+
+    return builder;
 }
 
 string Decompress::twoBitAnyMismatch(size_t startingIndex)
 {
-    return "UNDEFINED";
+    string builder = string();
+
+    string _firstMistmatchBin, _secondMismatchBin, _dictIndexBin;
+    _firstMistmatchBin = readBitsFromCodeStream(startingIndex, 5);
+    _secondMismatchBin = readBitsFromCodeStream(startingIndex + 5, 5);
+    _dictIndexBin = readBitsFromCodeStream(startingIndex + 5 + 5, 4);
+
+    unsigned int _firstMistmatch = binStrToInt(_firstMistmatchBin);
+    unsigned int _secondMismatch = binStrToInt(_secondMismatchBin);
+    unsigned int _dictIndex = binStrToInt(_dictIndexBin);
+
+    string _originalStr = dictionary[_dictIndex];
+
+    int _maskPos = -1;
+    for (size_t i = 0; i < _originalStr.size(); i++)
+    {
+        if (i == _firstMistmatch || i == _secondMismatch)
+            builder += ((_originalStr[i] == '0') ? '1' : '0' );
+        else
+            builder += _originalStr[i];
+    }
+
+    return builder;
 }
 
 

@@ -24,9 +24,7 @@ class Decompress
 
     string rle(size_t startingIndex);
     string bitmask(size_t startingIndex);
-    string oneBitMismatch(size_t startingIndex);
-    string twoBitConMismatch(size_t startingIndex);
-    string fourBitConMismatch(size_t startingIndex);
+    string consecutiveBitMismatch(size_t startingIndex, unsigned int bits);
     string twoBitAnyMismatch(size_t startingIndex);
 
     void initCodeStream();
