@@ -135,6 +135,37 @@ void Decompress::decompLoop()
     }
 }
 
+string Decompress::rle(size_t startingIndex)
+{
+    return "UNDEFINED";
+}
+
+string Decompress::bitmask(size_t startingIndex)
+{
+    return "UNDEFINED";
+}
+
+string Decompress::oneBitMismatch(size_t startingIndex)
+{
+    return "UNDEFINED";
+}
+
+string Decompress::twoBitConMismatch(size_t startingIndex)
+{
+    return "UNDEFINED";
+}
+
+string Decompress::fourBitConMismatch(size_t startingIndex)
+{
+    return "UNDEFINED";
+}
+
+string Decompress::twoBitAnyMismatch(size_t startingIndex)
+{
+    return "UNDEFINED";
+}
+
+
 void Decompress::run()
 {
     if (DEBUG_MODE)
