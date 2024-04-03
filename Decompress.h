@@ -11,9 +11,14 @@ using std::string, std::vector, std::map, std::shared_ptr;
 
 class Decompress
 {
+    string codeStream;
+    vector<string> dictionary;
+
     string filepathDirs;
     string outfilePath;
     std::ofstream outfile;
+
+    void initCodeStream();
 
     public:
     Decompress(string filepathDirs);
