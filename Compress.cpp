@@ -331,6 +331,41 @@ void Compress::mainCompLoop()
     }
 }
 
+unsigned int Compress::insertStringToStream(string toAdd, string* stream, unsigned int streamWidth)
+{
+    // Get number of characters on current line
+    unsigned int _charsOnCurrentLine = 0;
+    for (int i = 0; i < stream->size(); i++)
+    {
+        if (stream->at(i) != '\n')
+            _charsOnCurrentLine++;
+        else
+            _charsOnCurrentLine = 0;
+    }
+
+
+    // Insert characters until 
+    for (int i = 0; i < toAdd.size(); i++)
+    {
+        if (_charsOnCurrentLine < streamWidth)
+        {
+            stream->push_back(toAdd[i]);
+        }
+        else
+        {
+            // Reset chars since we're on a new line
+            stream->push_back('\n');
+            _charsOnCurrentLine = 0;
+
+            stream->push_back(toAdd[i]);
+        }
+        
+        _charsOnCurrentLine++;
+    }
+
+    return _charsOnCurrentLine;
+}
+
 void Compress::printFreqDict()
 {
     outfile << "xxxx" << "\n";
@@ -345,11 +380,44 @@ void Compress::formatFile()
 {
     outfile.close();
     std::ifstream infile(outfilePath);
+    
+    string codeStream;
+    unsigned int _charsOnLine;
+
+    if (infile.is_open())
+    {
+        string line;
+        while (std::getline(infile, line))
+        {
+            string _toAdd = string();
+            for (int i = 0; i < line.size(); i++)
+                if (line.at(i) == '1' || line.at(i) == '0')
+                    _toAdd += line.at(i);
+                
+            _charsOnLine = insertStringToStream(_toAdd, &codeStream);
+        }
+
+        for (int i = 0; i < 32 - _charsOnLine; i++)
+        {
+            codeStream += '0';
+        }
+
+        codeStream += "\n";
+
+        infile.close();
+        outfile.open(outfilePath);
+        outfile << codeStream;
+    }
+    else
+    {
+        std::cout << "Unable to read outfile when reformatting!" << std::endl;
+        exit(1);
+    }
 }
 
 void Compress::run()
 {
     mainCompLoop();
-    // formatFile();
+    formatFile();
     printFreqDict();
 }

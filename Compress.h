@@ -33,6 +33,8 @@ class Compress
     // Returns index of val in *vec, -1 if not found
     int valueInVec(string val, vector<BinaryLine>* vec);
 
+    unsigned int insertStringToStream(string toAdd, string* stream, unsigned int streamWidth = 32);
+
     string bitmaskCompress(string line);
     string mismatch1Bit(string line);
     string mismatch2Bit(string line);
