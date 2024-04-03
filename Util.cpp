@@ -59,7 +59,7 @@ unsigned int binStrToInt(string str)
     for (int i = 0; i < str.size(); i++)
     {
         unsigned int _val = str[str.size() - 1 - i] == '1' ? 1 : 0;
-        sum += std::pow(2, i + 1) * _val;
+        sum += std::pow(2, i) * _val;
     }
 
     return sum;
