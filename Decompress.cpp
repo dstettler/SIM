@@ -62,6 +62,79 @@ void Decompress::initCodeStream()
     }
 }
 
+string Decompress::readBitsFromCodeStream(size_t start, size_t bitsToRead)
+{
+    string _str = string();
+    for (int i = 0; i < bitsToRead && i + start < codeStream.size(); i++)
+        _str += codeStream[start + i];
+
+    return _str;
+}
+
+void Decompress::decompLoop()
+{
+    size_t nextPc;
+    // 6 bits is the smallest possible instruction, so the upper possible limit will be size - 3 - 3
+    // ...pc should be assigned to a value higher than this regardless
+    for (size_t pc = 0; pc < codeStream.size() - 3 - 3;)
+    {
+        string _format = readBitsFromCodeStream(pc, 3);
+        
+        string _outStr = string();
+        if (_format == "000")
+        {
+            nextPc = pc + 3 + 32;
+            for (int i = 0; i < 32; i++)
+                _outStr += codeStream.at(pc + 3 + i);
+        }
+        else if (_format == "001")
+        {
+            nextPc = pc + 3 + 3;
+            _outStr = rle(pc + 3);
+        }
+        else if (_format == "010")
+        {
+            nextPc = pc + 3 + 5 + 4 + 4;
+            _outStr = bitmask(pc + 3);
+        }
+        else if (_format == "011")
+        {
+            nextPc = pc + 3 + 5 + 4;
+            _outStr = oneBitMismatch(pc + 3);
+        }
+        else if (_format == "100")
+        {
+            nextPc = pc + 3 + 5 + 4;
+            _outStr = twoBitConMismatch(pc + 3);
+        }
+        else if (_format == "101")
+        {
+            nextPc = pc + 3 + 5 + 4;
+            _outStr = fourBitConMismatch(pc + 3);
+        }
+        else if (_format == "110")
+        {
+            nextPc = pc + 3 + 5 + 5 + 4;
+            _outStr = twoBitAnyMismatch(pc + 3);
+        }
+        else if (_format == "111")
+        {
+            nextPc = pc + 3 + 4;
+            string _dictVal = readBitsFromCodeStream(pc + 3, 4);
+            
+            _outStr = dictionary[binStrToInt(_dictVal)];
+        }
+
+        if (DEBUG_MODE)
+            std::cout << "PC: " << pc << ", " << _outStr  << "\n----" << std::endl;
+
+        prevLine = _outStr;
+
+        outfile << _outStr << "\n";
+        pc = nextPc;
+    }
+}
+
 void Decompress::run()
 {
     if (DEBUG_MODE)
@@ -72,5 +145,5 @@ void Decompress::run()
         std::cout << i << ":\t" << dictionary[i] << std::endl;
     }
 
-    
+    decompLoop();
 }

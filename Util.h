@@ -32,4 +32,6 @@ bool isAnotherMistmatch(std::string str1, std::string str2, int firstMismatch, i
 */
 bool consecutiveMismatches(std::string str1, std::string str2, int firstMismatch, int length);
 
+unsigned int binStrToInt(string str);
+
 #endif

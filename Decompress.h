@@ -14,11 +14,23 @@ class Decompress
     string codeStream;
     vector<string> dictionary;
 
+    string prevLine;
+
     string filepathDirs;
     string outfilePath;
     std::ofstream outfile;
 
+    string readBitsFromCodeStream(size_t start, size_t bitsToRead);
+
+    string rle(size_t startingIndex);
+    string bitmask(size_t startingIndex);
+    string oneBitMismatch(size_t startingIndex);
+    string twoBitConMismatch(size_t startingIndex);
+    string fourBitConMismatch(size_t startingIndex);
+    string twoBitAnyMismatch(size_t startingIndex);
+
     void initCodeStream();
+    void decompLoop();
 
     public:
     Decompress(string filepathDirs);

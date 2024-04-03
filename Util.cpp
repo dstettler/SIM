@@ -1,5 +1,6 @@
 #include "Util.h"
 
+#include <cmath>
 #include <string>
 
 using std::string;
@@ -50,4 +51,16 @@ bool consecutiveMismatches(std::string str1, std::string str2, int firstMismatch
             return false;
 
     return true;
+}
+
+unsigned int binStrToInt(string str)
+{
+    unsigned int sum = 0;
+    for (int i = 0; i < str.size(); i++)
+    {
+        unsigned int _val = str[str.size() - 1 - i] == '1' ? 1 : 0;
+        sum += std::pow(2, i + 1) * _val;
+    }
+
+    return sum;
 }
