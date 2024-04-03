@@ -1,5 +1,5 @@
 #include "Compress.h"
-#include "Constants.h"
+#include "Util.h"
 
 #include <algorithm>
 #include <fstream>
@@ -92,27 +92,6 @@ vector<Compress::BinaryLine> Compress::getMostFrequentEntries(map<string, std::p
     return vector<BinaryLine>(_iterA, _iterB);
 }
 
-string Compress::getBinStrFromInt(int i, int numChars)
-{
-    string builder = string();
-    int _i = i;
-    while (_i != 0)
-    {
-        builder = ((_i % 2 == 0) ? "0" : "1") + builder;
-        _i /= 2;
-    }
-
-    int _charsDiff = numChars - builder.size();
-    if (_charsDiff > 0)
-        for (int i = 0; i < _charsDiff; i++)
-            builder = "0" + builder;
-
-    if (DEBUG_MODE)
-        printf("Got %s from %d\n", builder.c_str(), i);
-        
-    return builder;
-}
-
 int Compress::valueInVec(string val, vector<BinaryLine>* vec)
 {
     for (int i = 0; i < vec->size(); i++)
@@ -120,33 +99,6 @@ int Compress::valueInVec(string val, vector<BinaryLine>* vec)
             return i;
 
     return -1;
-}
-
-int Compress::getFirstMismatch(string str1, string str2, int offset)
-{
-    for (int i = 0 + offset; i < str1.size() && i < str2.size(); i++)
-        if (str1.at(i) != str2.at(i))
-            return i;
-
-    return -1;
-}
-
-bool Compress::isAnotherMistmatch(std::string str1, std::string str2, int firstMismatch, int skip)
-{
-    for (int i = firstMismatch + skip; i < str1.size() && i < str2.size(); i++)
-        if (str1.at(i) != str2.at(i))
-            return true;
-
-    return false;
-}
-
-bool Compress::consecutiveMismatches(std::string str1, std::string str2, int firstMismatch, int length)
-{
-    for (int i = firstMismatch; (i < str1.size() && i < str2.size()) || (i < firstMismatch + length); i++)
-        if (str1.at(i) != str2.at(i))
-            return false;
-
-    return true;
 }
 
 string Compress::bitmaskCompress(string line)
